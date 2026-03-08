@@ -49,10 +49,10 @@ export const command: SlashCommand = {
     )
     .addStringOption(option =>
       option
-        .setName('cor')
-        .setDescription('Cor do cargo em hexadecimal (ex: #FF5733)')
+        .setName('prefixo')
+        .setDescription('Prefixo do cargo para nickname (ex: [ADM])')
         .setRequired(false)
-        .setMaxLength(7)
+        .setMaxLength(10)
     ) as SlashCommandBuilder,
 
   // Apenas administradores podem usar
@@ -66,19 +66,19 @@ export const command: SlashCommand = {
     const nome = interaction.options.getString('nome', true).trim();
     const hierarquia = interaction.options.getInteger('hierarquia', true);
     const cargoDiscord = interaction.options.getRole('cargo-discord') as Role | null;
-    const cor = interaction.options.getString('cor')?.trim() || null;
+    const prefixo = interaction.options.getString('prefixo')?.trim() || null;
 
     // Valida a cor se fornecida
-    if (cor && !/^#[0-9A-Fa-f]{6}$/.test(cor)) {
-      await interaction.reply({
-        embeds: [createErrorEmbed(
-          'Cor Inválida',
-          'A cor deve estar no formato hexadecimal (ex: #FF5733).'
-        )],
-        ephemeral: true
-      });
-      return;
-    }
+    // if (cor && !/^#[0-9A-Fa-f]{6}$/.test(cor)) {
+    //   await interaction.reply({
+    //     embeds: [createErrorEmbed(
+    //       'Cor Inválida',
+    //       'A cor deve estar no formato hexadecimal (ex: #FF5733).'
+    //     )],
+    //     ephemeral: true
+    //   });
+    //   return;
+    // }
 
     await interaction.deferReply({ ephemeral: true });
 
@@ -105,7 +105,7 @@ export const command: SlashCommand = {
           nome,
           hierarquia,
           discordRoleId: cargoDiscord?.id || null,
-          cor
+          prefixo
         }
       });
 
@@ -124,8 +124,8 @@ export const command: SlashCommand = {
       if (cargoDiscord) {
         descricao += `**Cargo Discord:** <@&${cargoDiscord.id}>\n`;
       }
-      if (cor) {
-        descricao += `**Cor:** ${cor}\n`;
+      if (prefixo) {
+        descricao += `**Prefixo:** ${prefixo}\n`;
       }
 
       await interaction.editReply({
