@@ -219,12 +219,14 @@ async function handleCargoSetCargo(
         }
 
         // Dentro da funcao handleCargoSetCargo, apos adicionar o cargo:
-        await atualizarNickname(
-          discordMember,
-          novoCargo.prefixo,
-          membro.nome,
-          membro.idJogo || membro.discordId
-        );
+        // await atualizarNickname(
+        //   discordMember,
+        //   novoCargo.prefixo,
+        //   membro.nome,
+        //   membro.idJogo || membro.discordId
+        // );
+        await atualizarNickname(discordMember, novoCargo.prefixo, membro.nome, membro.idJogo as string);
+                        console.log('[HandleCargoSetCargo] CHEGOU AQUI 2');
       } catch (error) {
         console.error('[SelectMenu] Erro ao atualizar cargo no Discord:', error);
       }

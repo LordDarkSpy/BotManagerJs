@@ -116,7 +116,7 @@ async function handleSetOpenModal(interaction) {
     // Campo: Nome
     const nomeInput = new TextInputBuilder()
         .setCustomId('nome')
-        .setLabel('Seu nome completo ou apelido')
+        .setLabel('Seu nome completo')
         .setStyle(TextInputStyle.Short)
         .setRequired(true)
         .setMinLength(2)
@@ -125,11 +125,11 @@ async function handleSetOpenModal(interaction) {
     // Campo: Telefone
     const telefoneInput = new TextInputBuilder()
         .setCustomId('telefone')
-        .setLabel('Telefone de contato (com DDD)')
+        .setLabel('Telefone')
         .setStyle(TextInputStyle.Short)
         .setRequired(false)
         .setMaxLength(20)
-        .setPlaceholder('Ex: (11) 99999-9999');
+        .setPlaceholder('Ex: 101-101');
     // Campo: ID no Jogo
     const idJogoInput = new TextInputBuilder()
         .setCustomId('idJogo')
@@ -137,7 +137,7 @@ async function handleSetOpenModal(interaction) {
         .setStyle(TextInputStyle.Short)
         .setRequired(false)
         .setMaxLength(50)
-        .setPlaceholder('Ex: 12345678');
+        .setPlaceholder('Ex: 171');
     // Campo: Recrutador
     const recrutadorInput = new TextInputBuilder()
         .setCustomId('recrutador')

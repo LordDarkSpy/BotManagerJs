@@ -170,7 +170,8 @@ async function handleCargoSetCargo(interaction, membroId) {
                     await discordMember.roles.add(newRole);
                 }
                 // Dentro da funcao handleCargoSetCargo, apos adicionar o cargo:
-                await atualizarNickname(discordMember, novoCargo.prefixo, membro.nome, membro.idJogo || membro.discordId);
+                await atualizarNickname(discordMember, novoCargo.prefixo, membro.nome, membro.idJogo);
+                console.log('[SelectMenu] CHEGOU AQUI 1');
             }
             catch (error) {
                 console.error('[SelectMenu] Erro ao atualizar cargo no Discord:', error);

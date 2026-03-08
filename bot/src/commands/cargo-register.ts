@@ -44,14 +44,14 @@ export const command: SlashCommand = {
     .addRoleOption(option =>
       option
         .setName('cargo-discord')
-        .setDescription('Cargo do Discord para sincronização (opcional)')
-        .setRequired(false)
+        .setDescription('Cargo do Discord para sincronização')
+        .setRequired(true)
     )
     .addStringOption(option =>
       option
         .setName('prefixo')
         .setDescription('Prefixo do cargo para nickname (ex: [ADM])')
-        .setRequired(false)
+        .setRequired(true)
         .setMaxLength(10)
     ) as SlashCommandBuilder,
 
