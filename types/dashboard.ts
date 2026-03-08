@@ -91,7 +91,7 @@ export interface Cargo {
   id: string
   nome: string
   discordRoleId: string | null
-  cor: string | null
+  prefixo: string | null
   hierarquia: number
   _count?: {
     membros: number

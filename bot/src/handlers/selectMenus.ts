@@ -24,6 +24,8 @@ import {
   PermissionErrors 
 } from '../utils/permissions.js';
 import { logCargoAlterado } from '../services/log.service.js';
+import { atualizarNickname } from '../utils/nickname.js';
+
 
 // =============================================================================
 // Handler Principal
@@ -215,10 +217,20 @@ async function handleCargoSetCargo(
         if (newRole) {
           await discordMember.roles.add(newRole);
         }
+
+        // Dentro da funcao handleCargoSetCargo, apos adicionar o cargo:
+        await atualizarNickname(
+          discordMember,
+          novoCargo.prefixo,
+          membro.nome,
+          membro.idJogo || membro.discordId
+        );
       } catch (error) {
         console.error('[SelectMenu] Erro ao atualizar cargo no Discord:', error);
       }
     }
+
+    
 
     // Registra log
     await logCargoAlterado(

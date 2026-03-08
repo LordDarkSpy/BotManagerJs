@@ -23,7 +23,7 @@ interface CargoTabela {
   nome: string
   discordRoleId: string
   hierarquia: number
-  cor: string | null
+  prefixo: string | null
   _count: {
     membros: number
   }
@@ -48,10 +48,9 @@ export default function CargosPage() {
       cabecalho: 'Nome do Cargo',
       celula: (cargo) => (
         <div className="flex items-center gap-2">
-          {cargo.cor && (
+          {cargo.prefixo && (
             <div 
               className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: cargo.cor }}
             />
           )}
           <div>
