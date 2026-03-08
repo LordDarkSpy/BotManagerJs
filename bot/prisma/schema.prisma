@@ -1,0 +1,338 @@
+// =============================================================================
+// BotManagerJs - Schema do Banco de Dados
+// =============================================================================
+// Este arquivo define toda a estrutura do banco de dados PostgreSQL usando Prisma.
+// Cada model representa uma tabela no banco de dados.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Configuracao - Armazena as configurações gerais do bot para cada servidor
+// =============================================================================
+// Esta tabela guarda todas as configurações personalizáveis do bot,
+// como canais de notificação, cargos com permissões especiais, etc.
+// =============================================================================
+model Configuracao {
+  id          String  @id @default(cuid())
+  guildId     String  @unique // ID do servidor Discord
+  
+  // Configurações visuais do bot
+  botName        String? // Nome personalizado do bot
+  botDescription String? // Descrição do bot
+  botImage       String? // URL da imagem/avatar do bot
+  
+  // Canais de notificação
+  canalAprovacaoSet String? // Canal onde aparecem pedidos de Set para aprovação
+  canalFgts         String? // Canal para registros de FGTS
+  canalCaixa        String? // Canal para movimentações de caixa
+  canalAusencia     String? // Canal para notificações de ausência
+  canalLogs         String? // Canal para logs de auditoria
+  
+  // Cargos com permissões especiais
+  cargoAprovadorSet  String? // Cargo que pode aprovar/reprovar pedidos de Set
+  cargoGestorCargos  String? // Cargo que pode gerenciar cargos dos membros
+  cargoAdministrador String? // Cargo com acesso total ao bot
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("configuracoes")
+}
+
+// =============================================================================
+// Cargo - Define a hierarquia de cargos da organização
+// =============================================================================
+// Os cargos são ordenados por hierarquia (número maior = cargo mais alto).
+// Isso é usado para validar quem pode promover/rebaixar quem.
+// =============================================================================
+model Cargo {
+  id             String  @id @default(cuid())
+  guildId        String  // ID do servidor Discord
+  nome           String  // Nome do cargo
+  hierarquia     Int     // Nível hierárquico (1 = mais baixo, maior = mais alto)
+  discordRoleId  String? // ID do cargo no Discord (para sincronização)
+  cor            String? // Cor do cargo em hexadecimal (#FFFFFF)
+  
+  // Relação com membros que possuem este cargo
+  membros Membro[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Garantir que não haja cargos duplicados por servidor
+  @@unique([guildId, nome])
+  @@map("cargos")
+}
+
+// =============================================================================
+// Membro - Cadastro de membros da organização
+// =============================================================================
+// Armazena todos os dados dos membros cadastrados através do sistema de Set.
+// Inclui informações de contato, recrutamento e status atual.
+// =============================================================================
+model Membro {
+  id         String   @id @default(cuid())
+  guildId    String   // ID do servidor Discord
+  discordId  String   // ID do usuário no Discord
+  nome       String   // Nome completo ou apelido
+  telefone   String?  // Telefone de contato
+  idJogo     String?  // ID no jogo (se aplicável)
+  
+  // Informações de recrutamento
+  recrutadorId   String? // ID Discord de quem recrutou
+  recrutadorNome String? // Nome de quem recrutou
+  tipo           TipoMembro @default(ADULTO) // Tipo do membro (ADULTO ou BABY)
+  
+  // Cargo atual do membro
+  cargoId String?
+  cargo   Cargo?  @relation(fields: [cargoId], references: [id])
+  
+  // Status do membro na organização
+  status     StatusMembro @default(ATIVO)
+  dataEntrada DateTime    @default(now())
+  dataSaida   DateTime?
+  
+  // Relações com outras tabelas
+  solicitacoesSet  SolicitacaoSet[]
+  ausencias        Ausencia[]
+  transacoesFgts   TransacaoFgts[]
+  movimentacoesCaixa MovimentacaoCaixa[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Um membro é único por servidor e ID Discord
+  @@unique([guildId, discordId])
+  @@map("membros")
+}
+
+// Enum para tipo de membro
+enum TipoMembro {
+  ADULTO // Membro experiente/veterano
+  BABY   // Membro novato/em treinamento
+}
+
+// Enum para status do membro
+enum StatusMembro {
+  ATIVO    // Membro ativo na organização
+  INATIVO  // Membro inativo mas não removido
+  BANIDO   // Membro banido da organização
+  AUSENTE  // Membro temporariamente ausente
+}
+
+// =============================================================================
+// SolicitacaoSet - Pedidos de Set (ingresso) na organização
+// =============================================================================
+// Registra todas as solicitações de Set feitas pelos usuários,
+// incluindo o status de aprovação e quem aprovou/reprovou.
+// =============================================================================
+model SolicitacaoSet {
+  id        String   @id @default(cuid())
+  guildId   String   // ID do servidor Discord
+  
+  // Dados do solicitante
+  solicitanteId   String // ID Discord do solicitante
+  solicitanteNome String // Nome informado na solicitação
+  telefone        String? // Telefone informado
+  idJogo          String? // ID no jogo informado
+  recrutador      String? // Nome do recrutador
+  tipo            TipoMembro @default(ADULTO)
+  
+  // Status da solicitação
+  status StatusSolicitacao @default(PENDENTE)
+  
+  // Informações de decisão
+  aprovadorId   String?   // ID Discord de quem aprovou/reprovou
+  aprovadorNome String?   // Nome de quem aprovou/reprovou
+  dataDecisao   DateTime? // Data da decisão
+  motivoRejeicao String?  // Motivo caso seja reprovado
+  
+  // Referência ao membro criado (se aprovado)
+  membroId String?
+  membro   Membro? @relation(fields: [membroId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("solicitacoes_set")
+}
+
+// Enum para status de solicitação de Set
+enum StatusSolicitacao {
+  PENDENTE  // Aguardando análise
+  APROVADO  // Solicitação aprovada
+  REPROVADO // Solicitação reprovada
+}
+
+// =============================================================================
+// Ausencia - Registro de ausências dos membros
+// =============================================================================
+// Controla os períodos de ausência dos membros,
+// permitindo agendar notificações de retorno.
+// =============================================================================
+model Ausencia {
+  id       String   @id @default(cuid())
+  guildId  String   // ID do servidor Discord
+  
+  // Referência ao membro
+  membroId String
+  membro   Membro @relation(fields: [membroId], references: [id])
+  
+  // Período de ausência
+  dataInicio DateTime // Data de início da ausência
+  dataFim    DateTime // Data prevista de retorno
+  
+  // Detalhes
+  motivo     String?  // Motivo da ausência (opcional)
+  notificado Boolean  @default(false) // Se já foi notificado sobre retorno
+  
+  // Status da ausência
+  status StatusAusencia @default(ATIVA)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ausencias")
+}
+
+// Enum para status de ausência
+enum StatusAusencia {
+  ATIVA     // Ausência em andamento
+  FINALIZADA // Membro já retornou
+  CANCELADA  // Ausência cancelada
+}
+
+// =============================================================================
+// TransacaoFgts - Registros de pagamentos de FGTS
+// =============================================================================
+// Armazena todos os depósitos/pagamentos de FGTS realizados pelos membros,
+// incluindo comprovantes e valores.
+// =============================================================================
+model TransacaoFgts {
+  id        String   @id @default(cuid())
+  guildId   String   // ID do servidor Discord
+  
+  // Referência ao membro que fez o depósito
+  membroId String
+  membro   Membro @relation(fields: [membroId], references: [id])
+  
+  // Dados da transação
+  valor        Float    // Valor do depósito
+  imageUrl     String?  // URL do comprovante (imagem)
+  idTransacao  String   @unique // ID único da transação para referência
+  dataDeposito DateTime @default(now()) // Data do depósito
+  
+  // Observações adicionais
+  observacao String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transacoes_fgts")
+}
+
+// =============================================================================
+// MovimentacaoCaixa - Movimentações financeiras do caixa
+// =============================================================================
+// Registra todas as entradas e saídas do caixa da organização,
+// permitindo controle financeiro detalhado.
+// =============================================================================
+model MovimentacaoCaixa {
+  id       String   @id @default(cuid())
+  guildId  String   // ID do servidor Discord
+  
+  // Referência ao membro que registrou
+  membroId String
+  membro   Membro @relation(fields: [membroId], references: [id])
+  
+  // Dados da movimentação
+  tipo      TipoMovimentacao // ENTRADA ou SAIDA
+  valor     Float            // Valor da movimentação
+  descricao String           // Descrição/motivo da movimentação
+  imageUrl  String?          // URL do comprovante (opcional)
+  
+  // Categorização
+  categoria String? // Categoria da movimentação (ex: salário, compra, etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("movimentacoes_caixa")
+}
+
+// Enum para tipo de movimentação
+enum TipoMovimentacao {
+  ENTRADA // Dinheiro entrando no caixa
+  SAIDA   // Dinheiro saindo do caixa
+}
+
+// =============================================================================
+// Blacklist - Lista de usuários banidos
+// =============================================================================
+// Mantém registro de usuários que não podem solicitar Set,
+// incluindo o motivo do banimento.
+// =============================================================================
+model Blacklist {
+  id       String   @id @default(cuid())
+  guildId  String   // ID do servidor Discord
+  
+  // Dados do usuário banido
+  discordId String  // ID Discord do usuário
+  nome      String? // Nome do usuário (para referência)
+  
+  // Informações do banimento
+  motivo         String  // Motivo do banimento
+  adicionadoPorId String // ID Discord de quem adicionou
+  adicionadoPorNome String? // Nome de quem adicionou
+  
+  // Data de expiração (opcional - para banimentos temporários)
+  dataExpiracao DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Um usuário só pode estar na blacklist uma vez por servidor
+  @@unique([guildId, discordId])
+  @@map("blacklist")
+}
+
+// =============================================================================
+// Log - Registro de auditoria de todas as ações
+// =============================================================================
+// Armazena logs de todas as ações importantes realizadas no bot,
+// permitindo auditoria e rastreamento de atividades.
+// =============================================================================
+model Log {
+  id       String   @id @default(cuid())
+  guildId  String   // ID do servidor Discord
+  
+  // Dados da ação
+  acao      String   // Tipo de ação realizada
+  detalhes  String?  // Detalhes adicionais em JSON ou texto
+  
+  // Quem executou a ação
+  executorId   String  // ID Discord do executor
+  executorNome String? // Nome do executor
+  
+  // Alvo da ação (se aplicável)
+  alvoId   String?  // ID Discord do alvo
+  alvoNome String?  // Nome do alvo
+  
+  // Metadata
+  ip       String?  // IP (para ações via dashboard)
+  userAgent String? // User agent (para ações via dashboard)
+
+  createdAt DateTime @default(now())
+
+  @@index([guildId, acao])
+  @@index([guildId, createdAt])
+  @@map("logs")
+}

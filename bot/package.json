@@ -1,0 +1,33 @@
+{
+  "name": "botmanagerjs",
+  "version": "1.0.0",
+  "description": "Bot Discord para gestão de membros, cargos, pagamentos e controle administrativo",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "deploy": "tsx src/deploy-commands.ts",
+    "deploy-commands": "tsx src/deploy-commands.ts",
+    "clear-commands": "tsx src/clear-commands.ts",
+    "db:generate": "cd .. && npx prisma generate",
+    "db:push": "cd .. && npx prisma db push",
+    "db:migrate": "cd .. && npx prisma migrate dev",
+    "db:studio": "cd .. && npx prisma studio"
+  },
+  "dependencies": {
+    "@discordjs/rest": "^2.2.0",
+    
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/node-cron": "^3.0.11",
+    
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
